@@ -152,11 +152,16 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
         }
     }
 
+    // enable early-stop
+    int best_iter = 0;
+    double best_error = DBL_MAX;
+    int EVAL_INTERVAL = 10;  // the interval (number of passed iterations) for which we calculate error)
+
     // Perform main training loop
     start = time(0);
     for (int iter = 0; iter < max_iter; iter++) {
 
-        bool need_eval_error = (verbose && ((iter > 0 && iter % 50 == 0) || (iter == max_iter - 1)));
+        bool need_eval_error = (iter > 0 && iter % EVAL_INTERVAL == 0) || (iter == max_iter - 1);
 
         // Compute approximate gradient
         double error = computeGradient(row_P, col_P, val_P, Y, N, no_dims, dY, theta, need_eval_error);
@@ -191,16 +196,39 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                 fprintf(stderr, "Iteration %d: error is %f\n", iter + 1, error);
             else {
                 total_time += (float) (end - start);
-                fprintf(stderr, "Iteration %d: error is %f (50 iterations in %4.2f seconds)\n", iter + 1, error, (float) (end - start) );
+                fprintf(stderr, "Iteration %d: error is %f (%d iterations in %4.2f seconds)\n",
+                        iter + 1, error, EVAL_INTERVAL, (float) (end - start) );
             }
             start = time(0);
         }
 
+        // check early-stop
+        // only activate after exaggeration phase
+        if (need_eval_error && iter > stop_lying_iter) {
+            // update best error (the smaller the better)
+            if (error < best_error) {
+                best_error = error;
+                best_iter = iter;
+            }
+            // check if there is no progress
+            if (iter - best_iter > n_iter_without_progress) {
+                if (verbose) {
+                    fprintf(stderr, "Stop training after %d iterations without progress.\n." 
+                            "best_error=%f, best_iter=%d, current_error=%f, current_iter=%d",
+                            n_iter_without_progress, best_error, best_iter, error, iter);
+                }
+                end = time(0);
+                break;
+            }
+        }
+        // end train loop
     }
     end = time(0); total_time += (float) (end - start) ;
 
-    if (final_error != NULL)
+    if (final_error != NULL) {
         *final_error = evaluateError(row_P, col_P, val_P, Y, N, no_dims, theta);
+        fprintf(stderr, "\nFinal error: %f\n", *final_error);
+    }
 
     // Clean up memory
     free(dY);

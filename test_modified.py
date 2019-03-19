@@ -16,12 +16,10 @@ if __name__ == "__main__":
         n_components=2,
         learning_rate=200,
         n_iter=1000,
-        n_iter_without_progress=300,
+        n_iter_without_progress=100,
         perplexity=20,
-        min_grad_norm=1e-7,
+        min_grad_norm=1e-2,
     )
-    print(tsne)
-    print(tsne.__version__)
 
     Z = tsne.fit_transform(X)
     plt.figure(figsize=(6, 6))
