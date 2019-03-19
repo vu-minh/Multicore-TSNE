@@ -59,13 +59,15 @@ def test_tsne(X, TSNE, out_name="temp.png"):
 
 
 if __name__ == "__main__":
-    X, y = load_iris(return_X_y=True)
+    TEST_SMALL = False
+    verbose = 1
+
+    if TEST_SMALL:
+        X, y = load_iris(return_X_y=True)
+    else:
+        X, y = load_digits(return_X_y=True)
+        # X = X / 255.0
     X = StandardScaler().fit_transform(X)
 
-    # X, y = load_digits(return_X_y=True)
-    # X = StandardScaler().fit_transform(X)
-    # X = X / 255.0
-
-    verbose = 1
     test_tsne(X, TSNE=partial(MulticoreTSNE, n_jobs=2), out_name="multicore.png")
     test_tsne(X, TSNE=SKTSNE, out_name="sklearn.png")
