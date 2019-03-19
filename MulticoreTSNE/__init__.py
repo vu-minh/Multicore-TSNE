@@ -109,7 +109,7 @@ class MulticoreTSNE:
                 double *final_error,
                 int n_iter_without_progress, double min_grad_norm,
                 int* running_iter,
-                double* progress_errors,
+                double* progress_errors, double* error_per_point,
                 int distance
             );"""
         )
@@ -156,8 +156,12 @@ class MulticoreTSNE:
         cffi_running_iter = self.ffi.cast("int*", running_iter.ctypes.data)
 
         # the error (kl_divergence_) for each iteration
-        progress_errors = np.zeros((self.n_iter), dtype=float)
+        progress_errors = np.zeros((self.n_iter,), dtype=float)
         cffi_progress_errors = self.ffi.cast("double*", progress_errors.ctypes.data)
+
+        # error for each data point
+        error_per_point = np.zeros((N,), dtype=float)
+        cffi_error_per_point = self.ffi.cast("double*", error_per_point.ctypes.data)
 
         t = FuncThread(
             self.C.tsne_run_double,
@@ -181,6 +185,7 @@ class MulticoreTSNE:
             self.min_grad_norm,
             cffi_running_iter,
             cffi_progress_errors,
+            cffi_error_per_point,
             int(self.cheat_metric),
         )
         t.daemon = True
@@ -194,4 +199,5 @@ class MulticoreTSNE:
         self.kl_divergence_ = final_error
         self.n_iter_ = running_iter
         self.progress_errors_ = progress_errors
+        self.error_per_point_ = error_per_point
         return Y

@@ -3,7 +3,7 @@ from time import time
 
 import numpy as np
 from sklearn.datasets import load_iris, load_digits
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from matplotlib import pyplot as plt
 
 from MulticoreTSNE import MulticoreTSNE
@@ -19,7 +19,7 @@ def test_tsne(X, TSNE, out_name="temp.png"):
         learning_rate=200,
         n_iter=1000,
         n_iter_without_progress=150,
-        perplexity=20,
+        perplexity=10,
         min_grad_norm=1e-4,
     )
     Z = tsne.fit_transform(X)
@@ -37,8 +37,23 @@ def test_tsne(X, TSNE, out_name="temp.png"):
     except AttributeError:
         print("`progress_errors_` is not an attribute of TSNE object\n")
 
+    error_per_point = None
+    try:
+        print("Get error for each point: ")
+        error_per_point = tsne.error_per_point_
+        print("Original error: \n")
+        print(error_per_point)
+        error_per_point = (
+            MinMaxScaler(feature_range=(32, 256))
+            .fit_transform(error_per_point.reshape(-1, 1))
+            .reshape(1, -1)
+        )
+        print(error_per_point)
+    except AttributeError:
+        print("`error_per_point_` is not an attribute of TSNE object\n")
+
     plt.figure(figsize=(6, 6))
-    plt.scatter(Z[:, 0], Z[:, 1], c=y, alpha=0.5)
+    plt.scatter(Z[:, 0], Z[:, 1], c=y, s=error_per_point, alpha=0.5)
     plt.savefig(out_name)
     plt.close()
 

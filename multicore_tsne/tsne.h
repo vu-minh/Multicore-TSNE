@@ -27,11 +27,11 @@ public:
                int n_iter_without_progress = 300, double min_grad_norm = 1e-07,
                double *final_error = NULL,
                int *running_iter=NULL,
-               double *progress_errors=NULL);
+               double *progress_errors=NULL, double *error_per_point=NULL);
     void symmetrizeMatrix(int** row_P, int** col_P, double** val_P, int N);
 private:
     double computeGradient(int* inp_row_P, int* inp_col_P, double* inp_val_P, double* Y, int N, int D, double* dC, double theta, bool eval_error);
-    double evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int N, int no_dims, double theta);
+    double evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int N, int no_dims, double theta, double* C_per_point=NULL);
     void zeroMean(double* X, int N, int D);
     void computeGaussianPerplexity(double* X, int N, int D, int** _row_P, int** _col_P, double** _val_P, double perplexity, int K, int verbose);
     double randn();

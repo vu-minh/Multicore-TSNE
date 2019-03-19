@@ -48,7 +48,7 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                double early_exaggeration, double learning_rate,
                int n_iter_without_progress, double min_grad_norm,
                double *final_error, int *running_iter,
-               double *progress_errors) {
+               double *progress_errors, double *error_per_point) {
 
     if (verbose) {
         time_t now = time(0);
@@ -251,7 +251,7 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
     end = time(0); total_time += (float) (end - start) ;
 
     if (final_error != NULL) {
-        *final_error = evaluateError(row_P, col_P, val_P, Y, N, no_dims, theta);
+        *final_error = evaluateError(row_P, col_P, val_P, Y, N, no_dims, theta, error_per_point);
         if (progress_errors != NULL) {
             progress_errors[max_iter - 1] = *final_error;
         }
@@ -347,7 +347,7 @@ double TSNE<treeT, dist_fn>::computeGradient(int* inp_row_P, int* inp_col_P, dou
 
 // Evaluate t-SNE cost function (approximately)
 template <class treeT, double (*dist_fn)( const DataPoint&, const DataPoint&)>
-double TSNE<treeT, dist_fn>::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int N, int no_dims, double theta)
+double TSNE<treeT, dist_fn>::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int N, int no_dims, double theta, double* C_per_point)
 {
 
     // Get estimate of normalization term
@@ -368,6 +368,7 @@ double TSNE<treeT, dist_fn>::evaluateError(int* row_P, int* col_P, double* val_P
 #endif
     for (int n = 0; n < N; n++) {
         int ind1 = n * no_dims;
+        double C_n = 0.0;
         for (int i = row_P[n]; i < row_P[n + 1]; i++) {
             double Q = .0;
             int ind2 = col_P[i] * no_dims;
@@ -376,8 +377,11 @@ double TSNE<treeT, dist_fn>::evaluateError(int* row_P, int* col_P, double* val_P
                 Q += b * b;
             }
             Q = (1.0 / (1.0 + Q)) / sum_Q;
-            C += val_P[i] * log((val_P[i] + FLT_MIN) / (Q + FLT_MIN));
+            C_n += val_P[i] * log((val_P[i] + FLT_MIN) / (Q + FLT_MIN));
         }
+        C += C_n;
+        if (C_per_point != NULL)
+            C_per_point[n] = C_n;
     }
     
     return C;
@@ -667,10 +671,9 @@ extern "C"
                                 int random_state = -1, bool init_from_Y = false, int verbose = 0,
                                 double early_exaggeration = 12, double learning_rate = 200,
                                 double *final_error = NULL,
-                                int n_iter_without_progress = 300,
-                                double min_grad_norm = 1e-07,
+                                int n_iter_without_progress = 300, double min_grad_norm = 1e-07,
                                 int *running_iter = NULL,
-                                double *progress_errors = NULL,
+                                double *progress_errors = NULL, double* error_per_point = NULL,
                                 int distance = 1)
     {
         if (verbose) {
@@ -683,14 +686,16 @@ extern "C"
                     max_iter, n_iter_early_exag,
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
-                    final_error, running_iter, progress_errors);
+                    final_error, running_iter,
+                    progress_errors, error_per_point);
         } else {
             TSNE<SplitTree, euclidean_distance_squared> tsne;
             tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads,
                     max_iter, n_iter_early_exag,
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
-                    final_error, running_iter, progress_errors);
+                    final_error, running_iter,
+                    progress_errors, error_per_point);
         }
     }
 }
