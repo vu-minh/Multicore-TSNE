@@ -46,7 +46,14 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                int num_threads, int max_iter, int n_iter_early_exag,
                int random_state, bool init_from_Y, int verbose,
                double early_exaggeration, double learning_rate,
+               int n_iter_without_progress, double min_grad_norm,
                double *final_error) {
+
+    if (verbose) {
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        fprintf(stderr, "[C]Running the modified version of MulticoreTSNE by Minh, %s\n", dt);
+    }
 
     if (N - 1 < 3 * perplexity) {
         perplexity = (N - 1) / 3;
@@ -604,19 +611,29 @@ extern "C"
                                 int num_threads = 1, int max_iter = 1000, int n_iter_early_exag = 250,
                                 int random_state = -1, bool init_from_Y = false, int verbose = 0,
                                 double early_exaggeration = 12, double learning_rate = 200,
-                                double *final_error = NULL, int distance = 1)
+                                double *final_error = NULL,
+                                int n_iter_without_progress = 300,
+                                double min_grad_norm = 1e-07,
+                                int distance = 1)
     {
-        if (verbose)
+        if (verbose) {
             fprintf(stderr, "Performing t-SNE using %d cores.\n", NUM_THREADS(num_threads));
+            fprintf(stderr, "Running modified version with early-stop enabled: n_iter_without_progress = %d\n", n_iter_without_progress);
+        }
         if (distance == 0) {
             TSNE<SplitTree, euclidean_distance> tsne;
-            tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads, max_iter, n_iter_early_exag,
-                     random_state, init_from_Y, verbose, early_exaggeration, learning_rate, final_error);
-        }
-        else {
+            tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads,
+                    max_iter, n_iter_early_exag,
+                    random_state, init_from_Y, verbose, early_exaggeration,
+                    learning_rate, n_iter_without_progress, min_grad_norm,
+                    final_error);
+        } else {
             TSNE<SplitTree, euclidean_distance_squared> tsne;
-            tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads, max_iter, n_iter_early_exag,
-                     random_state, init_from_Y, verbose, early_exaggeration, learning_rate, final_error);
+            tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads,
+                    max_iter, n_iter_early_exag,
+                    random_state, init_from_Y, verbose, early_exaggeration,
+                    learning_rate, n_iter_without_progress, min_grad_norm,
+                    final_error);
         }
     }
 }

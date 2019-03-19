@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.datasets import make_blobs
 from sklearn.metrics import pairwise_distances
 
-from MulticoreTSNE import MulticoreTSNE
+import MulticoreTSNE
 
 
 make_blobs = partial(make_blobs, random_state=0)
@@ -30,10 +30,8 @@ class TestMulticoreTSNE(unittest.TestCase):
 
         self.assertEqual(E.shape, (X.shape[0], 2))
 
-        max_intracluster = max(pdist(E[y == 0]).max(),
-                               pdist(E[y == 1]).max())
-        min_intercluster = pairwise_distances(E[y == 0],
-                                              E[y == 1]).min()
+        max_intracluster = max(pdist(E[y == 0]).max(), pdist(E[y == 1]).max())
+        min_intercluster = pairwise_distances(E[y == 0], E[y == 1]).min()
 
         self.assertGreater(min_intercluster, max_intracluster)
 

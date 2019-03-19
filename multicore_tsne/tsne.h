@@ -24,6 +24,7 @@ public:
                int num_threads = 1, int max_iter = 1000, int n_iter_early_exag = 250,
                int random_state = 0, bool init_from_Y = false, int verbose = 0,
                double early_exaggeration = 12, double learning_rate = 200,
+               int n_iter_without_progress = 300, double min_grad_norm = 1e-07,
                double *final_error = NULL);
     void symmetrizeMatrix(int** row_P, int** col_P, double** val_P, int N);
 private:
