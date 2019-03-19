@@ -47,7 +47,8 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                int random_state, bool init_from_Y, int verbose,
                double early_exaggeration, double learning_rate,
                int n_iter_without_progress, double min_grad_norm,
-               double *final_error) {
+               double *final_error, int *running_iter,
+               double *progress_errors) {
 
     if (verbose) {
         time_t now = time(0);
@@ -208,23 +209,29 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
             start = time(0);
         }
 
+        //store error of each iteration
+        if (progress_errors != NULL)
+            progress_errors[iter] = error;
+        
         // check early-stop
         // only activate after exaggeration phase
-        if (need_eval_error && iter > stop_lying_iter) {
+        if (need_eval_error && iter > stop_lying_iter) {    
             // update best error (the smaller the better)
             if (error < best_error) {
                 best_error = error;
                 best_iter = iter;
             }
+            
             // check if there is no progress
             if (iter - best_iter > n_iter_without_progress) {
                 if (verbose) {
                     fprintf(stderr, "Stop training after %d iterations without progress.\n." 
-                            "best_error=%f, best_iter=%d, current_error=%f, current_iter=%d",
+                            "best_error=%f, best_iter=%d, current_error=%f, current_iter=%d\n",
                             n_iter_without_progress, best_error, best_iter, error, iter);
                 }
                 break;
             }
+            
             // check if the gradient of Y does not change too much
             if (sqrt(norm_dY_squared) < min_grad_norm) {
                 if (verbose) {
@@ -234,12 +241,20 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                 break;
             }
         }
+
+        //store index of the last run iteration
+        if (running_iter != NULL)
+            *running_iter = iter;
+
         // end train loop
     }
     end = time(0); total_time += (float) (end - start) ;
 
     if (final_error != NULL) {
         *final_error = evaluateError(row_P, col_P, val_P, Y, N, no_dims, theta);
+        if (progress_errors != NULL) {
+            progress_errors[max_iter - 1] = *final_error;
+        }
     }
 
     // Clean up memory
@@ -654,6 +669,8 @@ extern "C"
                                 double *final_error = NULL,
                                 int n_iter_without_progress = 300,
                                 double min_grad_norm = 1e-07,
+                                int *running_iter = NULL,
+                                double *progress_errors = NULL,
                                 int distance = 1)
     {
         if (verbose) {
@@ -666,14 +683,14 @@ extern "C"
                     max_iter, n_iter_early_exag,
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
-                    final_error);
+                    final_error, running_iter, progress_errors);
         } else {
             TSNE<SplitTree, euclidean_distance_squared> tsne;
             tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads,
                     max_iter, n_iter_early_exag,
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
-                    final_error);
+                    final_error, running_iter, progress_errors);
         }
     }
 }

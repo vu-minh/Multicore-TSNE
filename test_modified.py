@@ -1,6 +1,7 @@
 from functools import partial
 from time import time
 
+import numpy as np
 from sklearn.datasets import load_iris, load_digits
 from sklearn.preprocessing import StandardScaler
 from matplotlib import pyplot as plt
@@ -28,6 +29,14 @@ def test_tsne(X, TSNE, out_name="temp.png"):
     run_iter = tsne.n_iter_
     print(f"kl_loss={kl_loss} in {run_iter} iters, {running_time} seconds\n")
 
+    try:
+        print("Progress errors: ")
+        progress_errors = tsne.progress_errors_
+        progress_errors = progress_errors[np.where(progress_errors > 0)]
+        print(progress_errors)
+    except AttributeError:
+        print("`progress_errors_` is not an attribute of TSNE object\n")
+
     plt.figure(figsize=(6, 6))
     plt.scatter(Z[:, 0], Z[:, 1], c=y, alpha=0.5)
     plt.savefig(out_name)
@@ -35,11 +44,11 @@ def test_tsne(X, TSNE, out_name="temp.png"):
 
 
 if __name__ == "__main__":
-    # X, y = load_iris(return_X_y=True)
-    # X = StandardScaler().fit_transform(X)
-
-    X, y = load_digits(return_X_y=True)
+    X, y = load_iris(return_X_y=True)
     X = StandardScaler().fit_transform(X)
+
+    # X, y = load_digits(return_X_y=True)
+    # X = StandardScaler().fit_transform(X)
     # X = X / 255.0
 
     verbose = 1
