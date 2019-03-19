@@ -125,7 +125,8 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
 
     end = time(0);
     if (verbose)
-        fprintf(stderr, "Done in %4.2f seconds (sparsity = %f)!\nLearning embedding...\n", (float)(end - start) , (double) row_P[N] / ((double) N * (double) N));
+        fprintf(stderr, "Done in %4.2f seconds (sparsity = %f)!\nLearning embedding...\n",
+                (float)(end - start) , (double) row_P[N] / ((double) N * (double) N));
 
     /* 
         ======================
@@ -166,6 +167,8 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
         // Compute approximate gradient
         double error = computeGradient(row_P, col_P, val_P, Y, N, no_dims, dY, theta, need_eval_error);
 
+        // calculate the norm of gradient (dY) to check if dY is strongly modified
+        double norm_dY_squared = 0.0;
         for (int i = 0; i < N * no_dims; i++) {
             // Update gains
             gains[i] = (sign(dY[i]) != sign(uY[i])) ? (gains[i] + .2) : (gains[i] * .8 + .01);
@@ -173,6 +176,8 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
             // Perform gradient update (with momentum and gains)
             uY[i] = momentum * uY[i] - eta * gains[i] * dY[i];
             Y[i] = Y[i] + uY[i];
+            
+            norm_dY_squared += dY[i] * dY[i];
         }
 
         // Make solution zero-mean
@@ -188,8 +193,9 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
             momentum = final_momentum;
         }
 
+        // note that only need_eval_error==true, the error is evaluated
         // Print out progress
-        if (need_eval_error) {
+        if (verbose && need_eval_error) {
             end = time(0);
 
             if (iter == 0)
@@ -197,7 +203,7 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
             else {
                 total_time += (float) (end - start);
                 fprintf(stderr, "Iteration %d: error is %f (%d iterations in %4.2f seconds)\n",
-                        iter + 1, error, EVAL_INTERVAL, (float) (end - start) );
+                        iter, error, EVAL_INTERVAL, (float) (end - start) );
             }
             start = time(0);
         }
@@ -217,7 +223,14 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                             "best_error=%f, best_iter=%d, current_error=%f, current_iter=%d",
                             n_iter_without_progress, best_error, best_iter, error, iter);
                 }
-                end = time(0);
+                break;
+            }
+            // check if the gradient of Y does not change too much
+            if (sqrt(norm_dY_squared) < min_grad_norm) {
+                if (verbose) {
+                    fprintf(stderr, "Stop training: grandient norm does not change (%4.8f < %4.8f).\n",
+                            sqrt(norm_dY_squared), min_grad_norm);
+                }
                 break;
             }
         }
