@@ -17,7 +17,7 @@ def test_tsne(X, TSNE, out_name="temp.png"):
         n_components=2,
         learning_rate=200,
         n_iter=1000,
-        n_iter_without_progress=100,
+        n_iter_without_progress=150,
         perplexity=20,
         min_grad_norm=1e-4,
     )
@@ -39,8 +39,9 @@ if __name__ == "__main__":
     # X = StandardScaler().fit_transform(X)
 
     X, y = load_digits(return_X_y=True)
-    X = X / 255.0
+    X = StandardScaler().fit_transform(X)
+    # X = X / 255.0
 
-    verbose = 0
+    verbose = 1
     test_tsne(X, TSNE=partial(MulticoreTSNE, n_jobs=2), out_name="multicore.png")
     test_tsne(X, TSNE=SKTSNE, out_name="sklearn.png")

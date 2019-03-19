@@ -240,7 +240,6 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
 
     if (final_error != NULL) {
         *final_error = evaluateError(row_P, col_P, val_P, Y, N, no_dims, theta);
-        fprintf(stderr, "\nFinal error: %f\n", *final_error);
     }
 
     // Clean up memory
