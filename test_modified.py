@@ -44,7 +44,7 @@ def test_tsne(X, TSNE, out_name="temp.png"):
         print("Original error: \n")
         print(error_per_point)
         error_per_point = (
-            MinMaxScaler(feature_range=(32, 256))
+            MinMaxScaler(feature_range=(32, 160))
             .fit_transform(error_per_point.reshape(-1, 1))
             .reshape(1, -1)
         )
@@ -53,7 +53,7 @@ def test_tsne(X, TSNE, out_name="temp.png"):
         print("`error_per_point_` is not an attribute of TSNE object\n")
 
     plt.figure(figsize=(6, 6))
-    plt.scatter(Z[:, 0], Z[:, 1], c=y, s=error_per_point, alpha=0.5)
+    plt.scatter(Z[:, 0], Z[:, 1], c=y, s=error_per_point, alpha=0.5, cmap="jet")
     plt.savefig(out_name)
     plt.close()
 
