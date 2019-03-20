@@ -7,9 +7,9 @@ import numpy as np
 
 
 def imscatter(images, positions):
-    '''
+    """
         Creates a scatter plot, where each plot is shown by corresponding image
-    '''
+    """
     positions = np.array(positions)
 
     bottoms = positions[:, 1] - np.array([im.shape[1] / 2.0 for im in images])
@@ -25,7 +25,8 @@ def imscatter(images, positions):
     most_right = int(np.ceil(rigths.max()))
 
     scatter_image = np.zeros(
-        [most_right - most_left, most_top - most_bottom, 3], dtype=imgs[0].dtype)
+        [most_right - most_left, most_top - most_bottom, 3], dtype=imgs[0].dtype
+    )
 
     # shift, now all from zero
     positions -= [most_left, most_bottom]
@@ -42,18 +43,18 @@ def imscatter(images, positions):
     return scatter_image
 
 
-if __name__ == '__main__':
-    '''
+if __name__ == "__main__":
+    """
     Takes a set of images and returns their T-SNE embedding
-    '''
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--in_glob")
-    parser.add_argument("--out_path", default='embedding.png')
+    parser.add_argument("--out_path", default="embedding.png")
     args = parser.parse_args()
 
     files = glob.glob(args.in_glob)
 
-    print('Reading images')
+    print("Reading images")
     feats, imgs = [], []
     for f in files:
         im = skimage.io.imread(f)
@@ -66,7 +67,7 @@ if __name__ == '__main__':
 
     feats = np.vstack(feats).astype(np.float64)
 
-    print('Running T-SNE')
+    print("Running T-SNE")
     tsne = TSNE(n_jobs=1)
     embedding = tsne.fit_transform(feats)
 
@@ -75,8 +76,8 @@ if __name__ == '__main__':
     dists = kdt.query(embedding, k=2)[0][:, 1]
     c = (imgs[0].shape[0] + imgs[0].shape[1]) / 2 / np.percentile(dists, 30)
 
-    print('Creating an image scatter')
+    print("Creating an image scatter")
     img = imscatter(imgs, embedding * c)
 
-    print('Saving result')
+    print("Saving result")
     skimage.io.imsave(args.out_path, img)

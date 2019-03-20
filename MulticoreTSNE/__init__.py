@@ -117,7 +117,7 @@ class MulticoreTSNE:
         path = os.path.dirname(os.path.realpath(__file__))
         try:
             sofile = (
-                glob(os.path.join(path, "../libtsne_multicore_minh.so"))
+                glob(os.path.join(path, "libtsne*.so"))
                 + glob(os.path.join(path, "*tsne*.dll"))
             )[0]
             print("SO file: ", sofile)
