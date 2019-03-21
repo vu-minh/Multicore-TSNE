@@ -69,7 +69,9 @@ class MulticoreTSNE:
         n_jobs=1,
         cheat_metric=True,
     ):
-        print("\n[python]Running modified version: ", self.__version__)
+        if verbose:
+            print("\n[python]Running modified version: ", self.__version__)
+
         self.n_components = n_components
         self.angle = angle
         self.perplexity = perplexity
@@ -120,7 +122,8 @@ class MulticoreTSNE:
                 glob(os.path.join(path, "libtsne*.so"))
                 + glob(os.path.join(path, "*tsne*.dll"))
             )[0]
-            print("SO file: ", sofile)
+            if verbose:
+                print("SO file: ", sofile)
             self.C = self.ffi.dlopen(os.path.join(path, sofile))
         except (IndexError, OSError):
             raise RuntimeError("Cannot find/open tsne_multicore shared library")
