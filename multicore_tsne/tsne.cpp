@@ -48,7 +48,8 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
                double early_exaggeration, double learning_rate,
                int n_iter_without_progress, double min_grad_norm,
                double *final_error, int *running_iter,
-               double *progress_errors, double *error_per_point) {
+               double *progress_errors, double *error_per_point,
+               int eval_interval) {
 
     if (verbose) {
         time_t now = time(0);
@@ -157,13 +158,12 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
     // enable early-stop
     int best_iter = 0;
     double best_error = DBL_MAX;
-    int EVAL_INTERVAL = 10;  // the interval (number of passed iterations) for which we calculate error)
 
     // Perform main training loop
     start = time(0);
     for (int iter = 0; iter < max_iter; iter++) {
 
-        bool need_eval_error = (iter > 0 && iter % EVAL_INTERVAL == 0) || (iter == max_iter - 1);
+        bool need_eval_error = (iter > 0 && iter % eval_interval == 0) || (iter == max_iter - 1);
 
         // Compute approximate gradient
         double error = computeGradient(row_P, col_P, val_P, Y, N, no_dims, dY, theta, need_eval_error);
@@ -204,7 +204,7 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
             else {
                 total_time += (float) (end - start);
                 fprintf(stderr, "Iteration %d: error is %f (%d iterations in %4.2f seconds)\n",
-                        iter, error, EVAL_INTERVAL, (float) (end - start) );
+                        iter, error, eval_interval, (float) (end - start) );
             }
             start = time(0);
         }
@@ -674,7 +674,7 @@ extern "C"
                                 int n_iter_without_progress = 300, double min_grad_norm = 1e-07,
                                 int *running_iter = NULL,
                                 double *progress_errors = NULL, double* error_per_point = NULL,
-                                int distance = 1)
+                                int eval_interval = 50, int distance = 1)
     {
         if (verbose) {
             fprintf(stderr, "Performing t-SNE using %d cores.\n", NUM_THREADS(num_threads));
@@ -687,7 +687,7 @@ extern "C"
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
                     final_error, running_iter,
-                    progress_errors, error_per_point);
+                    progress_errors, error_per_point, eval_interval);
         } else {
             TSNE<SplitTree, euclidean_distance_squared> tsne;
             tsne.run(X, N, D, Y, no_dims, perplexity, theta, num_threads,
@@ -695,7 +695,7 @@ extern "C"
                     random_state, init_from_Y, verbose, early_exaggeration,
                     learning_rate, n_iter_without_progress, min_grad_norm,
                     final_error, running_iter,
-                    progress_errors, error_per_point);
+                    progress_errors, error_per_point, eval_interval);
         }
     }
 }

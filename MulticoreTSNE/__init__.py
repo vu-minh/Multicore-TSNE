@@ -67,6 +67,7 @@ class MulticoreTSNE:
         method="barnes_hut",
         angle=0.5,
         n_jobs=1,
+        eval_interval=50,
         cheat_metric=True,
     ):
         if verbose:
@@ -88,6 +89,7 @@ class MulticoreTSNE:
         self.n_iter_ = None
         self.kl_divergence_ = None
         self.verbose = int(verbose)
+        self.eval_interval = eval_interval
         self.cheat_metric = cheat_metric
         assert (
             isinstance(init, np.ndarray) or init == "random"
@@ -112,6 +114,7 @@ class MulticoreTSNE:
                 int n_iter_without_progress, double min_grad_norm,
                 int* running_iter,
                 double* progress_errors, double* error_per_point,
+                int eval_interval,
                 int distance
             );"""
         )
@@ -189,6 +192,7 @@ class MulticoreTSNE:
             cffi_running_iter,
             cffi_progress_errors,
             cffi_error_per_point,
+            self.eval_interval,
             int(self.cheat_metric),
         )
         t.daemon = True

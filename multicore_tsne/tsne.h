@@ -27,7 +27,8 @@ public:
                int n_iter_without_progress = 300, double min_grad_norm = 1e-07,
                double *final_error = NULL,
                int *running_iter=NULL,
-               double *progress_errors=NULL, double *error_per_point=NULL);
+               double *progress_errors=NULL, double *error_per_point=NULL,
+               int eval_interval = 50);
     void symmetrizeMatrix(int** row_P, int** col_P, double** val_P, int N);
 private:
     double computeGradient(int* inp_row_P, int* inp_col_P, double* inp_val_P, double* Y, int N, int D, double* dC, double theta, bool eval_error);
