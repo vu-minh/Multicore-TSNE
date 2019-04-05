@@ -171,14 +171,15 @@ void TSNE<treeT, dist_fn>::run(double* X, int N, int D, double* Y,
         // calculate the norm of gradient (dY) to check if dY is strongly modified
         double norm_dY_squared = 0.0;
         for (int i = 0; i < N * no_dims; i++) {
+            // Calculate norm of gradient 
+            norm_dY_squared = norm_dY_squared + (dY[i] * dY[i]);
+
             // Update gains
             gains[i] = (sign(dY[i]) != sign(uY[i])) ? (gains[i] + .2) : (gains[i] * .8 + .01);
 
             // Perform gradient update (with momentum and gains)
             uY[i] = momentum * uY[i] - eta * gains[i] * dY[i];
             Y[i] = Y[i] + uY[i];
-            
-            norm_dY_squared += dY[i] * dY[i];
         }
 
         // Make solution zero-mean
